@@ -89,6 +89,10 @@ Type your messages and interact with the chatbot! Type `exit` to end the session
   - Optimized API request handling.
   - Tuned inference parameters.
 
+## Screenshots
+
+![image](https://github.com/user-attachments/assets/16a0173d-102e-4815-8254-c63af3dd7181)
+
 ## Next Steps
  Enhance chatbot responses with additional fine-tuning techniques.
  Improve UI with web tools for a better user experience.
