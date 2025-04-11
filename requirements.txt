@@ -1,6 +1,0 @@
-openai
-transformers
-nltk
-spacy
-flask
-python-dotenv

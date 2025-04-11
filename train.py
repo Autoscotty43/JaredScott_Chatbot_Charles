@@ -1,50 +1,56 @@
-import torch
-from datasets import load_dataset
 from transformers import T5Tokenizer, T5ForConditionalGeneration, Trainer, TrainingArguments
+from datasets import load_dataset
+from chatbot import clean_response
+import os
 
-# Step 1: Load Pretrained Model and Tokenizer
 MODEL_NAME = "google/flan-t5-small"
-tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME)
-model = T5ForConditionalGeneration.from_pretrained(MODEL_NAME)
 
-# Step 2: Load Custom Chatbot Dataset 
-dataset = load_dataset("csv", data_files={"train": "chatbot_data.csv"})
-
-# Step 3: Preprocess Data (Tokenization)
-def preprocess_function(examples):
-    inputs = ["chatbot: " + text for text in examples["input"]]
-    targets = [text for text in examples["response"]]
+def preprocess(examples, tokenizer):
+    inputs = ["Charles: " + text for text in examples["input"]]
+    targets = [clean_response(text) for text in examples["response"]]
     model_inputs = tokenizer(inputs, max_length=128, truncation=True, padding="max_length")
     labels = tokenizer(targets, max_length=128, truncation=True, padding="max_length").input_ids
     model_inputs["labels"] = labels
     return model_inputs
 
-tokenized_dataset = dataset.map(preprocess_function, batched=True)
+def train():
+    tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME)
+    model = T5ForConditionalGeneration.from_pretrained(MODEL_NAME)
 
-# Step 4: Define Training Arguments
-training_args = TrainingArguments(
-    output_dir="./t5_chatbot",
-    evaluation_strategy="epoch",
-    save_strategy="epoch",
-    per_device_train_batch_size=8,
-    per_device_eval_batch_size=8,
-    logging_dir="./logs",
-    logging_steps=100,
-    num_train_epochs=3,
-    weight_decay=0.01,
-    save_total_limit=2
-)
+    dataset = load_dataset("csv", data_files={"train": "chatbot_data.csv"})
+    tokenized = dataset.map(lambda x: preprocess(x, tokenizer), batched=True)
 
-# Step 5: Train the Model
-trainer = Trainer(
-    model=model,
-    args=training_args,
-    train_dataset=tokenized_dataset["train"],
-    tokenizer=tokenizer
-)
+    # Use a timestamp in the output directory name
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    output_dir = f"./trained_chatbot_{timestamp}"
+    os.makedirs(output_dir, exist_ok=True)  # Create the directory
 
-trainer.train()
+    args = TrainingArguments(
+        output_dir=output_dir,
+        evaluation_strategy="epoch",
+        save_strategy="epoch",
+        per_device_train_batch_size=8,
+        num_train_epochs=3,
+        logging_dir="./logs",
+        save_total_limit=2,
+        save_steps=500,
+        warmup_steps=100,
+        learning_rate=5e-5,
+        report_to="none",  # Disable default logging to WandB/TensorBoard
+    )
 
-# Step 6: Save the Fine-Tuned Model
-model.save_pretrained("./fine_tuned_chatbot")
-tokenizer.save_pretrained("./fine_tuned_chatbot")
+    trainer = Trainer(
+        model=model,
+        args=args,
+        train_dataset=tokenized["train"],
+        tokenizer=tokenizer
+    )
+
+    trainer.train()
+    model.save_pretrained(output_dir)
+    tokenizer.save_pretrained(output_dir)
+    print(f"Trained model saved to {output_dir}") #important
+
+if __name__ == "__main__":
+    import datetime
+    train()

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35825.156 d17.13
+VisualStudioVersion = 17.13.35825.156
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "JaredScott_ChatBot_Charles", "JaredScott_ChatBot_Charles\JaredScott_ChatBot_Charles.pyproj", "{B348C892-41BD-4162-B987-7DCAB692717F}"
 EndProject
